@@ -1,0 +1,186 @@
+{
+  "name": "sec4dev",
+  "displayName": "Sec4Dev - Security for Developers",
+  "description": "Comprehensive security scanner that detects eval(), suspicious patterns, obfuscation, and potential vulnerabilities for secure development",
+  "version": "1.0.0",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other",
+    "Security"
+  ],
+  "keywords": [
+    "security",
+    "vulnerability",
+    "owasp",
+    "dependency",
+    "secrets",
+    "code-analysis"
+  ],
+  "activationEvents": [
+    "onCommand:sec4dev.scanDocument",
+    "onCommand:sec4dev.scanWorkspace",
+    "onCommand:sec4dev.scanDependencies",
+    "onCommand:sec4dev.scanSecrets",
+    "onCommand:sec4dev.owaspScan",
+    "onCommand:sec4dev.securityScore",
+    "onCommand:sec4dev.cliScan",
+    "onLanguage:javascript",
+    "onLanguage:typescript",
+    "onLanguage:python",
+    "onLanguage:php",
+    "onLanguage:json",
+    "onLanguage:yaml",
+    "onLanguage:xml"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "sec4dev.scanDocument",
+        "title": "Sec4Dev: Scan Document for Security Issues"
+      },
+      {
+        "command": "sec4dev.scanWorkspace",
+        "title": "Sec4Dev: Scan Workspace for Security Issues"
+      },
+      {
+        "command": "sec4dev.scanDependencies",
+        "title": "Sec4Dev: Scan Dependencies for Vulnerabilities"
+      },
+      {
+        "command": "sec4dev.scanSecrets",
+        "title": "Sec4Dev: Scan for Secrets and API Keys"
+      },
+      {
+        "command": "sec4dev.owaspScan",
+        "title": "Sec4Dev: OWASP Top 10 Vulnerability Scan"
+      },
+      {
+        "command": "sec4dev.terminalScan",
+        "title": "Sec4Dev: Terminal Command Analysis"
+      },
+      {
+        "command": "sec4dev.securityScore",
+        "title": "Sec4Dev: Show Security Score Dashboard"
+      },
+      {
+        "command": "sec4dev.cliScan",
+        "title": "Sec4Dev: CLI Security Scan"
+      }
+    ],
+    "configuration": {
+      "title": "Sec4Dev",
+      "properties": {
+        "sec4dev.enableRealTimeScanning": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable real-time scanning of documents"
+        },
+        "sec4dev.showWarnings": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show security warnings for suspicious code"
+        },
+        "sec4dev.enableDependencyScanning": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable dependency vulnerability scanning"
+        },
+        "sec4dev.enableSecretScanning": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable secret and API key detection"
+        },
+        "sec4dev.enableOWASPScanning": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable OWASP Top 10 vulnerability scanning"
+        },
+        "sec4dev.enableAIAnalysis": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable AI-powered code intent analysis"
+        },
+        "sec4dev.enableTerminalScanning": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable terminal command analysis"
+        },
+        "sec4dev.autoScanOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically scan files on save"
+        },
+        "sec4dev.autoScanOnCommit": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically scan before commit"
+        },
+        "sec4dev.securityScoreThreshold": {
+          "type": "number",
+          "default": 70,
+          "description": "Minimum security score threshold"
+        }
+      }
+    },
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "sec4dev.scanDocument",
+          "when": "editorTextFocus"
+        },
+        {
+          "command": "sec4dev.scanWorkspace",
+          "when": "workspaceFolderCount > 0"
+        }
+      ]
+    },
+    "views": {
+      "explorer": [
+        {
+          "id": "sec4devProblems",
+          "name": "Security Issues"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src/**/*.ts",
+    "build": "npm run compile && npm run test",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/node": "16.x",
+    "@types/jest": "^29.5.0",
+    "typescript": "^4.9.4",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "eslint": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.0.0",
+    "@typescript-eslint/parser": "^5.0.0",
+    "vsce": "^2.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.4.0",
+    "node-fetch": "^3.3.0",
+    "crypto": "^1.0.1",
+    "fs-extra": "^11.1.0",
+    "glob": "^10.3.0",
+    "yaml": "^2.3.0",
+    "xml2js": "^0.6.0",
+    "simple-git": "^3.16.0",
+    "chalk": "^4.1.2",
+    "commander": "^11.0.0",
+    "ora": "^6.3.0",
+    "table": "^6.8.1"
+  }
+} 
