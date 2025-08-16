@@ -68,6 +68,30 @@
       {
         "command": "sec4dev.cliScan",
         "title": "Sec4Dev: CLI Security Scan"
+      },
+      {
+        "command": "sec4dev.dockerfileScan",
+        "title": "Sec4Dev: Dockerfile Security Scan"
+      },
+      {
+        "command": "sec4dev.iacScan",
+        "title": "Sec4Dev: Infrastructure as Code Security Scan"
+      },
+      {
+        "command": "sec4dev.taintAnalysis",
+        "title": "Sec4Dev: Data Flow Analysis (Taint Analysis)"
+      },
+      {
+        "command": "sec4dev.apiSecurityScan",
+        "title": "Sec4Dev: API Security Testing"
+      },
+      {
+        "command": "sec4dev.riskPrioritization",
+        "title": "Sec4Dev: AI Risk Prioritization"
+      },
+      {
+        "command": "sec4dev.securityTraining",
+        "title": "Sec4Dev: Security Training Module"
       }
     ],
     "configuration": {

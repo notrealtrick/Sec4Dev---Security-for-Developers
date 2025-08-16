@@ -60,6 +60,45 @@ Sec4Dev is a comprehensive VS Code extension that helps developers detect securi
 - Network scanning command analysis
 - Data exfiltration pattern recognition
 
+## 🚀 New Features (v2.0.0)
+
+### 10. **Dockerfile and IaC Security Scanning** 🆕
+- Dockerfile security analysis
+- Infrastructure as Code (Terraform, Kubernetes) scanning
+- Container security best practices
+- Cloud configuration vulnerabilities
+- Security misconfigurations detection
+
+### 11. **AI Risk Prioritization** 🆕
+- Context-aware risk assessment
+- Impact and likelihood analysis
+- Business and technical impact evaluation
+- Priority scoring and recommendations
+- Time-to-fix and effort estimation
+
+### 12. **Data Flow Analysis (Taint Analysis)** 🆕
+- Tracks data flow from sources to sinks
+- Identifies potential security vulnerabilities
+- Source and sink pattern detection
+- Data flow path visualization
+- Sanitization analysis
+
+### 13. **API Security Testing** 🆕
+- API endpoint discovery and analysis
+- Authentication and authorization checks
+- Input validation testing
+- Rate limiting verification
+- Security test case generation
+- Vulnerability assessment
+
+### 14. **Security Training Module** 🆕
+- Interactive security lessons
+- Code examples and explanations
+- Quiz-based learning
+- Progress tracking
+- Certificate generation
+- Best practices education
+
 ## Commands
 
 ### Basic Scans
@@ -72,6 +111,12 @@ Sec4Dev is a comprehensive VS Code extension that helps developers detect securi
 ### Advanced Features
 - `Sec4Dev: Show Security Score Dashboard` - Security score panel
 - `Sec4Dev: CLI Security Scan` - CLI scanning
+- `Sec4Dev: Dockerfile Security Scan` - Dockerfile and container security
+- `Sec4Dev: Infrastructure as Code Security Scan` - IaC security analysis
+- `Sec4Dev: Data Flow Analysis (Taint Analysis)` - Advanced data flow tracking
+- `Sec4Dev: API Security Testing` - API security assessment
+- `Sec4Dev: AI Risk Prioritization` - AI-powered risk assessment
+- `Sec4Dev: Security Training Module` - Interactive security education
 
 ## Configuration
 

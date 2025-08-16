@@ -10,6 +10,11 @@ import { CodeActionProvider } from './providers/codeActionProvider';
 import { HoverProvider } from './providers/hoverProvider';
 import { CLIScanner } from './cli/cliScanner';
 import { GitHubAction } from './integrations/githubAction';
+import { DockerfileScanner, IaCScanner } from './scanners/dockerfileScanner';
+import { RiskPrioritizationScanner } from './scanners/riskPrioritizationScanner';
+import { TaintAnalysisScanner } from './scanners/taintAnalysisScanner';
+import { APISecurityScanner } from './scanners/apiSecurityScanner';
+import { TrainingModule } from './scanners/trainingModule';
 
 interface ScanResult {
   evalCount: number;
@@ -22,6 +27,11 @@ interface ScanResult {
   terminalCommands?: TerminalCommand[];
   aiAnalysis?: AIAnalysis;
   securityScore?: number;
+  dockerfileIssues?: any[];
+  iacIssues?: any[];
+  taintFlows?: any[];
+  apiVulnerabilities?: any[];
+  prioritizedIssues?: any[];
 }
 
 interface SuspiciousPattern {
@@ -90,6 +100,14 @@ export function activate(context: vscode.ExtensionContext) {
   const securityScore = new SecurityScoreCalculator();
   const cliScanner = new CLIScanner();
   const githubAction = new GitHubAction();
+  
+  // Initialize new scanners
+  const dockerfileScanner = new DockerfileScanner();
+  const iacScanner = new IaCScanner();
+  const riskPrioritizationScanner = new RiskPrioritizationScanner();
+  const taintAnalysisScanner = new TaintAnalysisScanner();
+  const apiSecurityScanner = new APISecurityScanner();
+  const trainingModule = new TrainingModule();
 
   // Initialize providers
   const problemProvider = new ProblemProvider();
@@ -142,6 +160,38 @@ export function activate(context: vscode.ExtensionContext) {
     showCLIResults(result);
   });
 
+  // New commands for advanced features
+  let dockerfileScan = vscode.commands.registerCommand('sec4dev.dockerfileScan', async () => {
+    const issues = await dockerfileScanner.scanWorkspace();
+    showDockerfileResults(issues);
+  });
+
+  let iacScan = vscode.commands.registerCommand('sec4dev.iacScan', async () => {
+    const issues = await iacScanner.scanWorkspace();
+    showIaCResults(issues);
+  });
+
+  let taintAnalysis = vscode.commands.registerCommand('sec4dev.taintAnalysis', async () => {
+    const flows = await taintAnalysisScanner.scanWorkspace();
+    showTaintAnalysisResults(flows);
+  });
+
+  let apiSecurityScan = vscode.commands.registerCommand('sec4dev.apiSecurityScan', async () => {
+    const vulnerabilities = await apiSecurityScanner.scanWorkspace();
+    showAPISecurityResults(vulnerabilities);
+  });
+
+  let riskPrioritization = vscode.commands.registerCommand('sec4dev.riskPrioritization', async () => {
+    const allIssues = await getAllIssues();
+    const prioritizedIssues = await riskPrioritizationScanner.prioritizeIssues(allIssues);
+    showRiskPrioritizationResults(prioritizedIssues);
+  });
+
+  let securityTraining = vscode.commands.registerCommand('sec4dev.securityTraining', async () => {
+    const lessons = await trainingModule.getLessons();
+    showSecurityTraining(lessons);
+  });
+
   context.subscriptions.push(
     scanDocument, 
     scanWorkspace, 
@@ -150,7 +200,13 @@ export function activate(context: vscode.ExtensionContext) {
     owaspScan, 
     terminalScan,
     securityScoreCmd, 
-    cliScan
+    cliScan,
+    dockerfileScan,
+    iacScan,
+    taintAnalysis,
+    apiSecurityScan,
+    riskPrioritization,
+    securityTraining
   );
 
   // Register providers
@@ -894,6 +950,383 @@ function showCLIResults(result: any) {
         <h3>Command Used</h3>
         <code>sec4dev scan --all</code>
       </div>
+    </body>
+    </html>
+  `;
+}
+
+// New result display functions
+function showDockerfileResults(issues: any[]) {
+  const panel = vscode.window.createWebviewPanel(
+    'sec4devDockerfile',
+    'Sec4Dev Dockerfile Security Scan',
+    vscode.ViewColumn.One,
+    {}
+  );
+
+  const criticalIssues = issues.filter(i => i.severity === 'critical');
+  const highIssues = issues.filter(i => i.severity === 'high');
+  const mediumIssues = issues.filter(i => i.severity === 'medium');
+  const lowIssues = issues.filter(i => i.severity === 'low');
+
+  panel.webview.html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Dockerfile Security Scan</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 20px; }
+        .header { background: #f0f0f0; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        .issue { background: #fff; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #ddd; }
+        .critical { border-left-color: #d32f2f; }
+        .high { border-left-color: #f57c00; }
+        .medium { border-left-color: #fbc02d; }
+        .low { border-left-color: #388e3c; }
+        .code { background: #f5f5f5; padding: 8px; border-radius: 3px; font-family: monospace; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>🐳 Dockerfile Security Scan Results</h1>
+        <p>Found ${issues.length} security issues in Dockerfiles</p>
+      </div>
+      
+      <div class="stats">
+        <p><strong>Critical:</strong> ${criticalIssues.length} | <strong>High:</strong> ${highIssues.length} | <strong>Medium:</strong> ${mediumIssues.length} | <strong>Low:</strong> ${lowIssues.length}</p>
+      </div>
+      
+      ${issues.map(issue => `
+        <div class="issue ${issue.severity}">
+          <h3>${issue.type.toUpperCase()} - Line ${issue.line}</h3>
+          <p><strong>Description:</strong> ${issue.description}</p>
+          <div class="code">${issue.code}</div>
+          <p><strong>Remediation:</strong> ${issue.remediation}</p>
+        </div>
+      `).join('')}
+    </body>
+    </html>
+  `;
+}
+
+function showIaCResults(issues: any[]) {
+  const panel = vscode.window.createWebviewPanel(
+    'sec4devIaC',
+    'Sec4Dev Infrastructure as Code Security Scan',
+    vscode.ViewColumn.One,
+    {}
+  );
+
+  const criticalIssues = issues.filter(i => i.severity === 'critical');
+  const highIssues = issues.filter(i => i.severity === 'high');
+  const mediumIssues = issues.filter(i => i.severity === 'medium');
+  const lowIssues = issues.filter(i => i.severity === 'low');
+
+  panel.webview.html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>IaC Security Scan</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 20px; }
+        .header { background: #f0f0f0; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        .issue { background: #fff; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #ddd; }
+        .critical { border-left-color: #d32f2f; }
+        .high { border-left-color: #f57c00; }
+        .medium { border-left-color: #fbc02d; }
+        .low { border-left-color: #388e3c; }
+        .code { background: #f5f5f5; padding: 8px; border-radius: 3px; font-family: monospace; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>🏗️ Infrastructure as Code Security Scan</h1>
+        <p>Found ${issues.length} security issues in IaC files</p>
+      </div>
+      
+      <div class="stats">
+        <p><strong>Critical:</strong> ${criticalIssues.length} | <strong>High:</strong> ${highIssues.length} | <strong>Medium:</strong> ${mediumIssues.length} | <strong>Low:</strong> ${lowIssues.length}</p>
+      </div>
+      
+      ${issues.map(issue => `
+        <div class="issue ${issue.severity}">
+          <h3>${issue.type.toUpperCase()} - Line ${issue.line}</h3>
+          <p><strong>Description:</strong> ${issue.description}</p>
+          <div class="code">${issue.code}</div>
+          <p><strong>Remediation:</strong> ${issue.remediation}</p>
+        </div>
+      `).join('')}
+    </body>
+    </html>
+  `;
+}
+
+function showTaintAnalysisResults(flows: any[]) {
+  const panel = vscode.window.createWebviewPanel(
+    'sec4devTaint',
+    'Sec4Dev Taint Analysis Results',
+    vscode.ViewColumn.One,
+    {}
+  );
+
+  const criticalFlows = flows.filter(f => f.severity === 'critical');
+  const highFlows = flows.filter(f => f.severity === 'high');
+  const mediumFlows = flows.filter(f => f.severity === 'medium');
+  const lowFlows = flows.filter(f => f.severity === 'low');
+
+  panel.webview.html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Taint Analysis Results</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 20px; }
+        .header { background: #f0f0f0; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        .flow { background: #fff; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #ddd; }
+        .critical { border-left-color: #d32f2f; }
+        .high { border-left-color: #f57c00; }
+        .medium { border-left-color: #fbc02d; }
+        .low { border-left-color: #388e3c; }
+        .path { background: #f9f9f9; padding: 10px; margin: 5px 0; border-radius: 3px; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>🔍 Taint Analysis Results</h1>
+        <p>Found ${flows.length} data flow vulnerabilities</p>
+      </div>
+      
+      <div class="stats">
+        <p><strong>Critical Flows:</strong> ${criticalFlows.length} | <strong>High Risk:</strong> ${highFlows.length} | <strong>Medium Risk:</strong> ${mediumFlows.length} | <strong>Low Risk:</strong> ${lowFlows.length}</p>
+      </div>
+      
+      ${flows.map(flow => `
+        <div class="flow ${flow.severity}">
+          <h3>${flow.source.type} → ${flow.sink.type}</h3>
+          <p><strong>Source:</strong> Line ${flow.source.line} - ${flow.source.description}</p>
+          <p><strong>Sink:</strong> Line ${flow.sink.line} - ${flow.sink.description}</p>
+          <p><strong>Confidence:</strong> ${(flow.confidence * 100).toFixed(1)}%</p>
+          <p><strong>Description:</strong> ${flow.description}</p>
+          <p><strong>Remediation:</strong> ${flow.remediation}</p>
+          <div class="path">
+            <strong>Data Flow Path:</strong>
+            ${flow.path.map(step => `<div>Line ${step.line}: ${step.operation} - ${step.context}</div>`).join('')}
+          </div>
+        </div>
+      `).join('')}
+    </body>
+    </html>
+  `;
+}
+
+function showAPISecurityResults(vulnerabilities: any[]) {
+  const panel = vscode.window.createWebviewPanel(
+    'sec4devAPI',
+    'Sec4Dev API Security Scan Results',
+    vscode.ViewColumn.One,
+    {}
+  );
+
+  const criticalVulns = vulnerabilities.filter(v => v.severity === 'critical');
+  const highVulns = vulnerabilities.filter(v => v.severity === 'high');
+  const mediumVulns = vulnerabilities.filter(v => v.severity === 'medium');
+  const lowVulns = vulnerabilities.filter(v => v.severity === 'low');
+
+  panel.webview.html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>API Security Scan</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 20px; }
+        .header { background: #f0f0f0; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        .vuln { background: #fff; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #ddd; }
+        .critical { border-left-color: #d32f2f; }
+        .high { border-left-color: #f57c00; }
+        .medium { border-left-color: #fbc02d; }
+        .low { border-left-color: #388e3c; }
+        .code { background: #f5f5f5; padding: 8px; border-radius: 3px; font-family: monospace; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>🔌 API Security Scan Results</h1>
+        <p>Found ${vulnerabilities.length} API security vulnerabilities</p>
+      </div>
+      
+      <div class="stats">
+        <p><strong>Critical:</strong> ${criticalVulns.length} | <strong>High:</strong> ${highVulns.length} | <strong>Medium:</strong> ${mediumVulns.length} | <strong>Low:</strong> ${lowVulns.length}</p>
+      </div>
+      
+      ${vulnerabilities.map(vuln => `
+        <div class="vuln ${vuln.severity}">
+          <h3>${vuln.type.toUpperCase()} - ${vuln.endpoint}</h3>
+          <p><strong>Line:</strong> ${vuln.line}</p>
+          <p><strong>Description:</strong> ${vuln.description}</p>
+          <p><strong>Remediation:</strong> ${vuln.remediation}</p>
+          ${vuln.testCase ? `<p><strong>Test Case:</strong> ${vuln.testCase.name}</p>` : ''}
+        </div>
+      `).join('')}
+    </body>
+    </html>
+  `;
+}
+
+async function getAllIssues(): Promise<any[]> {
+  const allIssues: any[] = [];
+  
+  // Collect issues from all scanners
+  const dependencyScanner = new DependencyScanner();
+  const secretScanner = new SecretScanner();
+  const owaspScanner = new OWASPScanner();
+  const terminalScanner = new TerminalScanner();
+  
+  try {
+    const dependencies = await dependencyScanner.scan();
+    const secrets = await secretScanner.scan();
+    const owaspIssues = await owaspScanner.scan();
+    const terminalCommands = await terminalScanner.scan();
+    
+    allIssues.push(...dependencies, ...secrets, ...owaspIssues, ...terminalCommands);
+  } catch (error) {
+    console.error('Error collecting all issues:', error);
+  }
+  
+  return allIssues;
+}
+
+function showRiskPrioritizationResults(prioritizedIssues: any[]) {
+  const panel = vscode.window.createWebviewPanel(
+    'sec4devRisk',
+    'Sec4Dev Risk Prioritization Results',
+    vscode.ViewColumn.One,
+    {}
+  );
+
+  const criticalIssues = prioritizedIssues.filter(i => i.riskAssessment.riskLevel === 'critical');
+  const highIssues = prioritizedIssues.filter(i => i.riskAssessment.riskLevel === 'high');
+  const mediumIssues = prioritizedIssues.filter(i => i.riskAssessment.riskLevel === 'medium');
+  const lowIssues = prioritizedIssues.filter(i => i.riskAssessment.riskLevel === 'low');
+
+  panel.webview.html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Risk Prioritization</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 20px; }
+        .header { background: #f0f0f0; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        .issue { background: #fff; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #ddd; }
+        .critical { border-left-color: #d32f2f; }
+        .high { border-left-color: #f57c00; }
+        .medium { border-left-color: #fbc02d; }
+        .low { border-left-color: #388e3c; }
+        .score { font-size: 24px; font-weight: bold; color: #1976d2; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>🎯 Risk Prioritization Results</h1>
+        <p>AI-powered risk assessment for ${prioritizedIssues.length} security issues</p>
+      </div>
+      
+      <div class="stats">
+        <p><strong>Critical:</strong> ${criticalIssues.length} | <strong>High:</strong> ${highIssues.length} | <strong>Medium:</strong> ${mediumIssues.length} | <strong>Low:</strong> ${lowIssues.length}</p>
+      </div>
+      
+      ${prioritizedIssues.map(issue => `
+        <div class="issue ${issue.riskAssessment.riskLevel}">
+          <div class="score">Priority Score: ${issue.priorityScore.toFixed(1)}</div>
+          <h3>${issue.originalIssue.type || 'Security Issue'} - Line ${issue.originalIssue.line}</h3>
+          <p><strong>Risk Level:</strong> ${issue.riskAssessment.riskLevel.toUpperCase()}</p>
+          <p><strong>Impact:</strong> ${issue.riskAssessment.impact}</p>
+          <p><strong>Likelihood:</strong> ${issue.riskAssessment.likelihood}</p>
+          <p><strong>Confidence:</strong> ${(issue.riskAssessment.confidence * 100).toFixed(1)}%</p>
+          <p><strong>Recommended Action:</strong> ${issue.recommendedAction}</p>
+          <p><strong>Time to Fix:</strong> ${issue.timeToFix}</p>
+          <p><strong>Effort:</strong> ${issue.effort}</p>
+          <p><strong>Explanation:</strong> ${issue.riskAssessment.explanation}</p>
+          <p><strong>Business Impact:</strong> ${issue.riskAssessment.businessImpact}</p>
+          <p><strong>Technical Impact:</strong> ${issue.riskAssessment.technicalImpact}</p>
+          <p><strong>Remediation:</strong> ${issue.riskAssessment.remediation}</p>
+        </div>
+      `).join('')}
+    </body>
+    </html>
+  `;
+}
+
+function showSecurityTraining(lessons: any[]) {
+  const panel = vscode.window.createWebviewPanel(
+    'sec4devTraining',
+    'Sec4Dev Security Training',
+    vscode.ViewColumn.One,
+    {}
+  );
+
+  const beginnerLessons = lessons.filter(l => l.difficulty === 'beginner');
+  const intermediateLessons = lessons.filter(l => l.difficulty === 'intermediate');
+  const advancedLessons = lessons.filter(l => l.difficulty === 'advanced');
+
+  panel.webview.html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Security Training</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 20px; }
+        .header { background: #f0f0f0; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        .lesson { background: #fff; padding: 15px; margin: 10px 0; border-radius: 5px; border: 1px solid #ddd; }
+        .beginner { border-left: 4px solid #388e3c; }
+        .intermediate { border-left: 4px solid #fbc02d; }
+        .advanced { border-left: 4px solid #d32f2f; }
+        .category { font-weight: bold; color: #1976d2; }
+        .difficulty { font-weight: bold; }
+        .beginner .difficulty { color: #388e3c; }
+        .intermediate .difficulty { color: #fbc02d; }
+        .advanced .difficulty { color: #d32f2f; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>🎓 Security Training Modules</h1>
+        <p>Comprehensive security education for developers</p>
+      </div>
+      
+      <h2>Beginner Level (${beginnerLessons.length} lessons)</h2>
+      ${beginnerLessons.map(lesson => `
+        <div class="lesson beginner">
+          <h3>${lesson.title}</h3>
+          <p class="category">Category: ${lesson.category.replace(/_/g, ' ')}</p>
+          <p class="difficulty">Difficulty: ${lesson.difficulty}</p>
+          <p>${lesson.description}</p>
+        </div>
+      `).join('')}
+      
+      <h2>Intermediate Level (${intermediateLessons.length} lessons)</h2>
+      ${intermediateLessons.map(lesson => `
+        <div class="lesson intermediate">
+          <h3>${lesson.title}</h3>
+          <p class="category">Category: ${lesson.category.replace(/_/g, ' ')}</p>
+          <p class="difficulty">Difficulty: ${lesson.difficulty}</p>
+          <p>${lesson.description}</p>
+        </div>
+      `).join('')}
+      
+      <h2>Advanced Level (${advancedLessons.length} lessons)</h2>
+      ${advancedLessons.map(lesson => `
+        <div class="lesson advanced">
+          <h3>${lesson.title}</h3>
+          <p class="category">Category: ${lesson.category.replace(/_/g, ' ')}</p>
+          <p class="difficulty">Difficulty: ${lesson.difficulty}</p>
+          <p>${lesson.description}</p>
+        </div>
+      `).join('')}
     </body>
     </html>
   `;
